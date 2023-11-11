@@ -1,0 +1,98 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  DELIVERYMAN
+  ADMIN
+}
+
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  email     String?   @unique
+  password  String?
+  cpf       String?   @unique
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  role UserRole @default(DELIVERYMAN)
+
+  package Package[]
+
+  @@map("users")
+}
+
+model Package {
+  id            String    @id @default(uuid())
+  deliverymanId String?   @map("deliveryman_id")
+  title         String
+  description   String
+  latitude      Decimal
+  longitude     Decimal
+  status        String
+  postAt        DateTime
+  recipientId   String?   @map("recipient_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime? @updatedAt @map("updated_at")
+  withdrawAt    DateTime? @map("withdraw_at")
+  deliveryAt    DateTime? @map("delivery_at")
+  returnAt      DateTime? @map("return_at")
+
+  Recipient Recipient? @relation(fields: [recipientId], references: [id])
+  User      User?      @relation(fields: [deliverymanId], references: [id])
+  Upload    Upload[]
+
+  @@map("packages")
+}
+
+model Recipient {
+  id              String         @id @default(uuid())
+  name            String
+  email           String         @unique
+  phone           String
+  street          String
+  residenceNumber String
+  district        String
+  city            String
+  state           String
+  cep             String
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime?      @updatedAt @map("updated_at")
+  packages        Package[]
+  Notification    Notification[]
+
+  @@map("recipients")
+}
+
+model Upload {
+  id        String  @id @default(uuid())
+  title     String
+  url       String
+  packageId String? @map("package_id")
+
+  package Package? @relation(fields: [packageId], references: [id])
+
+  @@map("uploads")
+}
+
+model Notification {
+  id          String    @id @default(uuid())
+  title       String
+  content     String
+  readAt      DateTime? @map("read_at")
+  createdAt   DateTime? @default(now()) @map("created_at")
+  recipientId String?   @map("recipient_id")
+
+  recipient Recipient? @relation(fields: [recipientId], references: [id])
+
+  @@map("notifications")
+}
